@@ -2,7 +2,7 @@
   "profiles": {
     "Sandbox": {
       "commandName": "Executable",
-      "workingDirectory": "C:\\Users\\hello\\source\\repos\\FF1Randomizer\\Sandbox\\bin\\Debug"
+      "workingDirectory": ".\\bin\\Debug"
     }
   }
 }
