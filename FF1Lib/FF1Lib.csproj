@@ -3,6 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
+  
+  <Target Name="MyPreCompileTarget" BeforeTargets="Build" Inputs="asm\*.asm;asm\*.inc" Outputs="asm\*.pic">
+    <Exec Command="buildasms" />
+  </Target>
+
+  <ItemGroup>
+    <EmbeddedResource Include="asm\*.pic" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.6|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
@@ -75,5 +83,5 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="RomUtilities" Version="2.2.0" />
   </ItemGroup>
-
+  
 </Project>
