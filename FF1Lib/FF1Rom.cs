@@ -612,8 +612,7 @@ namespace FF1Lib
 			// at the end of LoadBatSprCHRPalettes_NewGame -- which goes to above code (two lines up)
 			PutInBank(0x1F, 0xEADF, Blob.FromHex("D7CF"));
 
-			var myTestBlob = AsmReader.GetAsm("1E.asm");
- 			PutInBank(0x1E, 0x8000, myTestBlob);
+ 			PutInBank(0x1E, 0x8000, AsmStash.GetAssembledFile("bank_1E"));
 
 			Console.WriteLine(GetFromBank(0x1E, 0x8000, 0x0600).ToHex());
 

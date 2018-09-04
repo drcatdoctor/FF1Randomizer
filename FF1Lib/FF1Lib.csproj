@@ -3,13 +3,23 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Asm6502 Include="asm_autobuild\src\**\*.asm" />
+  </ItemGroup>
   
-  <Target Name="MyPreCompileTarget" BeforeTargets="Build" Inputs="asm\*.asm;asm\*.inc" Outputs="asm\*.pic">
-    <Exec Command="buildasms" />
+  <Target Name="Clean6502" BeforeTargets="Clean">
+    <RemoveDir Directories="asm_autobuild\6502bin;asm_autobuild\6502obj" />
+  </Target>
+    
+  <Target Name="Build6502" BeforeTargets="Build" Inputs="asm_autobuild\src\**\*.asm;asm_autobuild\include\**\*.inc" Outputs="asm_autobuild\6502bin\*.bin">
+    <MakeDir Directories="asm_autobuild\6502obj;asm_autobuild\6502bin" />
+    <Exec WorkingDirectory="asm_autobuild" Command="ca65 -l -I include -o 6502obj\%(Asm6502.fileName).o src\%(Asm6502.RecursiveDir)%(Asm6502.fileName).asm" Outputs="asm_autobuild\6502obj\%(Asm6502.fileName).o" />
+    <Exec WorkingDirectory="asm_autobuild" Command="ld65 -C nes_onebank.cfg -o 6502bin\%(Asm6502.fileName).bin 6502obj\%(Asm6502.fileName).o" Outputs="asm_autobuild\6502bin\%(Asm6502.fileName).bin" />
   </Target>
 
   <ItemGroup>
-    <EmbeddedResource Include="asm\*.pic" />
+    <EmbeddedResource Include="asm_autobuild\6502bin\**\*.bin" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.6|AnyCPU'">
@@ -20,6 +30,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.6|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <TreatSpecificWarningsAsErrors />
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
   </PropertyGroup>
 
   <ItemGroup>
@@ -82,6 +96,10 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="RomUtilities" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="asm_autobuild\6502bin" />
   </ItemGroup>
   
 </Project>
