@@ -9,27 +9,19 @@ namespace FF1Lib
 {
 	public partial class FF1Rom : NesRom
 	{
-		public const int MagicOffset = 0x301E0;
 		public const int MagicSize = 8;
 		public const int MagicCount = 64;
-		public const int MagicNamesOffset = 0x2BE03;
 		public const int MagicNameSize = 5;
-		public const int MagicTextPointersOffset = 0x304C0;
-		public const int MagicPermissionsOffset = 0x3AD18;
 		public const int MagicPermissionsSize = 8;
 		public const int MagicPermissionsCount = 12;
-		public const int MagicOutOfBattleOffset = 0x3AEFA;
 		public const int MagicOutOfBattleSize = 7;
 		public const int MagicOutOfBattleCount = 13;
 
-		public const int ConfusedSpellIndexOffset = 0x3321E;
 		public const int FireSpellIndex = 4;
 
-		public const int WeaponOffset = 0x30000;
 		public const int WeaponSize = 8;
 		public const int WeaponCount = 40;
 
-		public const int ArmorOffset = 0x30140;
 		public const int ArmorSize = 4;
 		public const int ArmorCount = 40;
 
@@ -45,9 +37,9 @@ namespace FF1Lib
 
 		public void ShuffleMagicLevels(MT19337 rng, bool keepPermissions)
 		{
-			var spells = Get(MagicOffset, MagicSize * MagicCount).Chunk(MagicSize);
-			var names = Get(MagicNamesOffset, MagicNameSize * MagicCount).Chunk(MagicNameSize);
-			var pointers = Get(MagicTextPointersOffset, MagicCount);
+			var spells = Get(Offsets.lut_MagicData, MagicSize * MagicCount).Chunk(MagicSize);
+			var names = Get(Offsets.itemText_strings_MagicStart, MagicNameSize * MagicCount).Chunk(MagicNameSize);
+			var pointers = Get(Offsets.magicBattleText_ptrTable, MagicCount);
 
 			var magicSpells = spells.Select((spell, i) => new MagicSpell
 			{
@@ -80,16 +72,16 @@ namespace FF1Lib
 				}
 			}
 
-			Put(MagicOffset, shuffledSpells.Select(spell => spell.Data).Aggregate((seed, next) => seed + next));
-			Put(MagicNamesOffset, shuffledSpells.Select(spell => spell.Name).Aggregate((seed, next) => seed + next));
-			Put(MagicTextPointersOffset, shuffledSpells.Select(spell => spell.TextPointer).ToArray());
+			Put(Offsets.lut_MagicData, shuffledSpells.Select(spell => spell.Data).Aggregate((seed, next) => seed + next));
+			Put(Offsets.itemText_strings_MagicStart, shuffledSpells.Select(spell => spell.Name).Aggregate((seed, next) => seed + next));
+			Put(Offsets.magicBattleText_ptrTable, shuffledSpells.Select(spell => spell.TextPointer).ToArray());
 
 			if (keepPermissions)
 			{
 				// Shuffle the permissions the same way the spells were shuffled.
 				for (int c = 0; c < MagicPermissionsCount; c++)
 				{
-					var oldPermissions = Get(MagicPermissionsOffset + c * MagicPermissionsSize, MagicPermissionsSize);
+					var oldPermissions = Get(Offsets.lut_MagicPermissions_data + c * MagicPermissionsSize, MagicPermissionsSize);
 
 					var newPermissions = new byte[MagicPermissionsSize];
 					for (int i = 0; i < 8; i++)
@@ -102,7 +94,7 @@ namespace FF1Lib
 						}
 					}
 
-					Put(MagicPermissionsOffset + c * MagicPermissionsSize, newPermissions);
+					Put(Offsets.lut_MagicPermissions_data + c * MagicPermissionsSize, newPermissions);
 				}
 			}
 
@@ -114,7 +106,7 @@ namespace FF1Lib
 			}
 
 			// Fix enemy spell pointers to point to where the spells are now.
-			var scripts = Get(ScriptOffset, ScriptSize * ScriptCount).Chunk(ScriptSize);
+			var scripts = Get(Offsets.lut_EnemyAi, ScriptSize * ScriptCount).Chunk(ScriptSize);
 			foreach (var script in scripts)
 			{
 				// Bytes 2-9 are magic spells.
@@ -126,10 +118,10 @@ namespace FF1Lib
 					}
 				}
 			}
-			Put(ScriptOffset, scripts.SelectMany(script => script.ToBytes()).ToArray());
+			Put(Offsets.lut_EnemyAi, scripts.SelectMany(script => script.ToBytes()).ToArray());
 
 			// Fix weapon and armor spell pointers to point to where the spells are now.
-			var weapons = Get(WeaponOffset, WeaponSize * WeaponCount).Chunk(WeaponSize);
+			var weapons = Get(Offsets.lut_WeaponData, WeaponSize * WeaponCount).Chunk(WeaponSize);
 			foreach (var weapon in weapons)
 			{
 				if (weapon[3] != 0x00)
@@ -137,9 +129,9 @@ namespace FF1Lib
 					weapon[3] = (byte)(newIndices[weapon[3] - 1] + 1);
 				}
 			}
-			Put(WeaponOffset, weapons.SelectMany(weapon => weapon.ToBytes()).ToArray());
+			Put(Offsets.lut_WeaponData, weapons.SelectMany(weapon => weapon.ToBytes()).ToArray());
 
-			var armors = Get(ArmorOffset, ArmorSize * ArmorCount).Chunk(ArmorSize);
+			var armors = Get(Offsets.lut_ArmorData, ArmorSize * ArmorCount).Chunk(ArmorSize);
 			foreach (var armor in armors)
 			{
 				if (armor[3] != 0x00)
@@ -147,10 +139,14 @@ namespace FF1Lib
 					armor[3] = (byte)(newIndices[armor[3] - 1] + 1);
 				}
 			}
-			Put(ArmorOffset, armors.SelectMany(armor => armor.ToBytes()).ToArray());
+			Put(Offsets.lut_ArmorData, armors.SelectMany(armor => armor.ToBytes()).ToArray());
 
 			// Fix the crazy out of battle spell system.
-			var outOfBattleSpellOffset = MagicOutOfBattleOffset;
+
+			// this is the offset to a CMP operand in a big list of CMP and JMP.
+			int outOfBattleSpellOffset = Offsets.func_MagicMenu_Loop + 0x3A;  // 0x3AEC0 + 0x3A = 0x3AEFA
+
+			// the below changes the IDs that are being CMPd against.
 			for (int i = 0; i < MagicOutOfBattleCount; i++)
 			{
 				var oldSpellIndex = _outOfBattleSpells[i];
@@ -162,8 +158,10 @@ namespace FF1Lib
 			}
 
 			// Confused enemies are supposed to cast FIRE, so figure out where FIRE ended up.
+			int confusedSpellIndexOffset = Offsets.func_Battle_DoEnemyTurn + 0x87;  // 0x33197
+
 			var newFireSpellIndex = shuffledSpells.FindIndex(spell => spell.Data == spells[FireSpellIndex]);
-			Put(ConfusedSpellIndexOffset, new[] { (byte)newFireSpellIndex });
+			Put(confusedSpellIndexOffset, new[] { (byte)newFireSpellIndex });
 		}
 	}
 }

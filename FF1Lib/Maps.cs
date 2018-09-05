@@ -81,23 +81,16 @@ namespace FF1Lib
 
 	public partial class FF1Rom : NesRom
 	{
-		public const int MapPointerOffset = 0x10000;
 		public const int MapPointerSize = 2;
 		public const int MapCount = 61;
-		public const int MapDataOffset = 0x10080;
 
-		public const int TeleportOffset = 0x02D00;
 		public const int TeleportCount = 64;
 
-		public const int TilesetDataOffset = 0x00800;
 		public const int TilesetDataSize = 2;
 		public const int TilesetDataCount = 128;
 		public const int TilesetCount = 8;
 
-		public const int MapObjJumpTableOffset = 0x390D3;
 		public const int JumpTablePointerSize = 2;
-		public const int MapObjOffset = 0x395D5;
-		public const int MapObjGfxOffset = 0x02E00;
 		public const int MapObjSize = 4;
 		public const int MapObjCount = 0xD0;
 
@@ -115,7 +108,7 @@ namespace FF1Lib
 			bool IsRandomBattleTile(Blob tuple) => IsBattleTile(tuple) && (tuple[1] & 0x80) != 0x00;
 			bool IsNonBossTrapTile(Blob tuple) => IsBattleTile(tuple) && tuple[1] > 0 && tuple[1] < FirstBossEncounterIndex;
 
-			var tilesets = Get(TilesetDataOffset, TilesetDataCount * TilesetDataSize * TilesetCount).Chunk(TilesetDataSize).ToList();
+			var tilesets = Get(Offsets.mapTileData, TilesetDataCount * TilesetDataSize * TilesetCount).Chunk(TilesetDataSize).ToList();
 			List<byte> encounters;
 
 			if (randomize)
@@ -127,7 +120,7 @@ namespace FF1Lib
 			{
 				var traps = tilesets.Where(IsNonBossTrapTile).ToList();
 				encounters = traps.Select(trap => trap[1]).ToList();
-			} 
+			}
 
 			tilesets.ForEach(tile =>
 			{
@@ -141,7 +134,7 @@ namespace FF1Lib
 				}
 			});
 
-			Put(TilesetDataOffset, tilesets.SelectMany(tileset => tileset.ToBytes()).ToArray());
+			Put(Offsets.mapTileData, tilesets.SelectMany(tileset => tileset.ToBytes()).ToArray());
 		}
 
 		private struct OrdealsRoom
@@ -272,13 +265,13 @@ namespace FF1Lib
 			// Now let's rewrite that teleporter.  The X coordinates are packed together, followed by the Y coordinates,
 			// followed by the map indices.  Maybe we'll make a data structure for that someday soon.
 			const byte LostTeleportIndex = 0x3C;
-			Put(TeleportOffset + LostTeleportIndex, new byte[] { 0x10 });
-			Put(TeleportOffset + TeleportCount + LostTeleportIndex, new byte[] { 0x12 });
+			Put(Offsets.teleportTable + LostTeleportIndex, new byte[] { 0x10 });
+			Put(Offsets.teleportTable + TeleportCount + LostTeleportIndex, new byte[] { 0x12 });
 		}
 
 		public void ShuffleSkyCastle4F(MT19337 rng, List<Map> maps)
 		{
-		    // Don't shuffle the return teleporter as Floor and Entrance shuffle might want to edit it.	
+		    // Don't shuffle the return teleporter as Floor and Entrance shuffle might want to edit it.
 			var map = maps[(byte)MapId.SkyPalace4F];
 			var upTeleporter = (x: 0x23, y: 0x23);
 			var dest = GetSkyCastleFloorTile(rng, map);
@@ -309,7 +302,7 @@ namespace FF1Lib
 		{
 			// Remove CROWN requirement for Ordeals.
 			const int OrdealsTileset = 1;
-			var ordealsTilesetOffset = TilesetDataOffset + OrdealsTileset * TilesetDataCount * TilesetDataSize;
+			var ordealsTilesetOffset = Offsets.mapTileData + OrdealsTileset * TilesetDataCount * TilesetDataSize;
 			var ordealsTilesetData = Get(ordealsTilesetOffset, TilesetDataCount * TilesetDataSize).ToUShorts();
 
 			// The 4 masked-out bits are special flags for a tile.  We wipe the flags for the two throne teleportation tiles,
@@ -334,11 +327,11 @@ namespace FF1Lib
 			const byte RobotGfx = 0x15;
 
 			// Set up the map object.
-			Put(MapObjOffset + (byte)ObjectId.WarMECH * MapObjSize, new [] { (byte)ObjectId.WarMECH, UnusedTextPointer, (byte)0x00, WarMECHEncounter });
-			Data[MapObjGfxOffset + (byte)ObjectId.WarMECH] = RobotGfx;
+			Put(Offsets.lut_MapObjTalkData + (byte)ObjectId.WarMECH * MapObjSize, new [] { (byte)ObjectId.WarMECH, UnusedTextPointer, (byte)0x00, WarMECHEncounter });
+			Data[Offsets.mapSpriteAssignment + (byte)ObjectId.WarMECH] = RobotGfx;
 
 			// Set the action when you talk to WarMECH.
-			Put(MapObjJumpTableOffset + (byte)ObjectId.WarMECH * JumpTablePointerSize, Blob.FromUShorts(new[] { TalkFight }));
+			Put(Offsets.lut_MapObjTalkJumpTbl + (byte)ObjectId.WarMECH * JumpTablePointerSize, Blob.FromUShorts(new[] { TalkFight }));
 
 			// Change the dialogue.
 			var dialogueStrings = new List<Blob>
@@ -356,10 +349,10 @@ namespace FF1Lib
 			ushort freeTextSpacePointer = 0xB487;
 			int pointerTarget = 0x20000 + freeTextSpacePointer;
 			Put(pointerTarget, dialogueStrings.PickRandom(rng));
-			Put(DialogueTextPointerOffset + 2 * UnusedTextPointer, Blob.FromUShorts(new [] { freeTextSpacePointer }));
+			Put(Offsets.dialogText_ptrTable + 2 * UnusedTextPointer, Blob.FromUShorts(new [] { freeTextSpacePointer }));
 
 			// Get rid of random WarMECH encounters.  Group 8 is now also group 7.
-			var formationOffset = FormationFrequencyOffset + FormationFrequencySize * (64 + (byte)MapId.SkyPalace5F);
+			var formationOffset = Offsets.lut_BattleRates + FormationFrequencySize * (64 + (byte)MapId.SkyPalace5F);
 			var formations = Get(formationOffset, FormationFrequencySize);
 			formations[6] = formations[7];
 			Put(formationOffset, formations);
@@ -385,7 +378,7 @@ namespace FF1Lib
 
 		private void MoveNpc(MapId mapId, int mapNpcIndex, int x, int y, bool inRoom, bool stationary)
 		{
-			int offset = MapSpriteOffset + ((byte)mapId * MapSpriteCount + mapNpcIndex) * MapSpriteSize;
+			int offset = Offsets.mapSprites + ((byte)mapId * MapSpriteCount + mapNpcIndex) * MapSpriteSize;
 
 			byte firstByte = (byte)x;
 			firstByte |= (byte)(inRoom ? 0x80 : 0x00);
@@ -397,7 +390,7 @@ namespace FF1Lib
 
 		private void SetNpc(MapId mapId, int mapNpcIndex, ObjectId mapObjId, int x, int y, bool inRoom, bool stationary)
 		{
-			int offset = MapSpriteOffset + ((byte)mapId * MapSpriteCount + mapNpcIndex) * MapSpriteSize;
+			int offset = Offsets.mapSprites + ((byte)mapId * MapSpriteCount + mapNpcIndex) * MapSpriteSize;
 
 			byte firstByte = (byte)x;
 			firstByte |= (byte)(inRoom ? 0x80 : 0x00);
@@ -410,9 +403,9 @@ namespace FF1Lib
 
 		public List<Map> ReadMaps()
 		{
-			var pointers = Get(MapPointerOffset, MapCount * MapPointerSize).ToUShorts();
+			var pointers = Get(Offsets.maps_ptrTable, MapCount * MapPointerSize).ToUShorts();
 
-			return pointers.Select(pointer => new Map(Get(MapPointerOffset + pointer, Map.RowCount * Map.RowLength))).ToList();
+			return pointers.Select(pointer => new Map(Get(Offsets.maps_ptrTable + pointer, Map.RowCount * Map.RowLength))).ToList();
 		}
 
 		public void WriteMaps(List<Map> maps)
@@ -420,16 +413,16 @@ namespace FF1Lib
 			var data = maps.Select(map => map.GetCompressedData()).ToList();
 
 			var pointers = new ushort[MapCount];
-			pointers[0] = MapDataOffset - MapPointerOffset;
+			pointers[0] = (ushort) (Offsets.maps_data - Offsets.maps_ptrTable);
 			for (int i = 1; i < MapCount; i++)
 			{
 				pointers[i] = (ushort)(pointers[i - 1] + data[i - 1].Length);
 			}
 
-			Put(MapPointerOffset, Blob.FromUShorts(pointers));
+			Put(Offsets.maps_ptrTable, Blob.FromUShorts(pointers));
 			for (int i = 0; i < MapCount; i++)
 			{
-				Put(MapPointerOffset + pointers[i], data[i]);
+				Put(Offsets.maps_ptrTable + pointers[i], data[i]);
 			}
 		}
 	}

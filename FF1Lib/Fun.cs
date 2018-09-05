@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,16 +16,12 @@ namespace FF1Lib
 
     public partial class FF1Rom
     {
-	    public const int TyroPaletteOffset = 0x30FC5;
-	    public const int TyroSpriteOffset = 0x20560;
-
-	    public const int PaletteOffset = 0x30F20;
 	    public const int PaletteSize = 4;
 	    public const int PaletteCount = 64;
 
 	    public void FunEnemyNames(bool teamSteak)
 	    {
-		    var enemyText = ReadText(EnemyTextPointerOffset, EnemyTextPointerBase, EnemyCount);
+		    var enemyText = ReadText(Offsets.data_EnemyNames_ptrTable, EnemyTextPointerBase, EnemyCount);
 
 		    enemyText[1] = FF1Text.TextToBytes("GrUMP", useDTE: false);
 		    enemyText[2] = FF1Text.TextToBytes("RURURU", useDTE: false); // +2
@@ -50,23 +46,26 @@ namespace FF1Lib
 			// Moving IMP and GrIMP gives me another 10 bytes, for a total of 19 extra bytes, of which I'm using 16.
 			var enemyTextPart1 = enemyText.Take(2).ToArray();
 		    var enemyTextPart2 = enemyText.Skip(2).ToArray();
-		    WriteText(enemyTextPart1, EnemyTextPointerOffset, EnemyTextPointerBase, 0x2CFEC);
-		    WriteText(enemyTextPart2, EnemyTextPointerOffset + 4, EnemyTextPointerBase, EnemyTextOffset);
+		    WriteText(enemyTextPart1, Offsets.data_EnemyNames_ptrTable, EnemyTextPointerBase, 0x2CFEC);
+		    WriteText(enemyTextPart2, Offsets.data_EnemyNames_ptrTable + 4, EnemyTextPointerBase, Offsets.data_EnemyNames_strings);
 	    }
 
 	    public void PaletteSwap(MT19337 rng)
 	    {
-		    var palettes = Get(PaletteOffset, PaletteSize * PaletteCount).Chunk(PaletteSize);
+		    var palettes = Get(Offsets.lut_BattlePalettes, PaletteSize * PaletteCount).Chunk(PaletteSize);
 
 			palettes.Shuffle(rng);
 
-			Put(PaletteOffset, Blob.Concat(palettes));
+			Put(Offsets.lut_BattlePalettes, Blob.Concat(palettes));
 	    }
 
 	    public void TeamSteak()
 	    {
-		    Put(TyroPaletteOffset, Blob.FromHex("302505"));
-		    Put(TyroSpriteOffset, Blob.FromHex(
+		    int tyroSpriteOffset = Offsets.BA(0x08, 0x8560);  // 0x20560
+		    int tyroPaletteOffset = Offsets.lut_BattlePalettes + 0x15; // 0x30FC5
+
+		    Put(tyroPaletteOffset, Blob.FromHex("302505"));
+		    Put(tyroSpriteOffset, Blob.FromHex(
 				"00000000000000000000000000000000" + "00000000000103060000000000000001" + "001f3f60cf9f3f7f0000001f3f7fffff" + "0080c07f7f87c7e60000008080f8f8f9" + "00000080c0e0f0780000000000000080" + "00000000000000000000000000000000" +
 				"00000000000000000000000000000000" + "0c1933676f6f6f6f03070f1f1f1f1f1f" + "ffffffffffffffffffffffffffffffff" + "e6e6f6fbfdfffffff9f9f9fcfefefefe" + "3c9e4e26b6b6b6b6c0e0f0f878787878" + "00000000000000000000000000000000" +
 				"00000000000000000000000000000000" + "6f6f6f6f673b190f1f1f1f1f1f070701" + "fffffec080f9fbffffffffffff8787ff" + "ff3f1f1f3ffdf9f3fefefefefefefefc" + "b6b6b6b6b6b6b6b67878787878787878" + "00000000000000000000000000000000" +

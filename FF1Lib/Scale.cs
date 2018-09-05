@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,14 +27,12 @@ namespace FF1Lib
 
 		public static readonly List<int> NonBossEnemies = Enumerable.Range(0, EnemyCount).Where(x => !Bosses.Contains(x)).ToList();
 
-		public const int PriceOffset = 0x37C00;
 		public const int PriceSize = 2;
 		public const int PriceCount = 240;
 
-		public const int ThreatLevelsOffset = 0x2CC00;
 		public const int ThreatLevelsSize = 64;
-		public const int OverworldThreatLevelOffset = 0x7C4FE;
-		public const int OceanThreatLevelOffset = 0x7C506;
+
+		public const int FirstGoldItemIndex = 108; // 108 items before gold chests
 
 		// Scale is the geometric scale factor used with RNG.  Multiplier is where we make everything cheaper
 		// instead of enemies giving more gold, so we don't overflow.
@@ -42,7 +40,7 @@ namespace FF1Lib
 		{
 			var scale = flags.PriceScaleFactor;
 			var multiplier = flags.ExpMultiplier;
-            var prices = Get(PriceOffset, PriceSize * PriceCount).ToUShorts();
+            var prices = Get(Offsets.data_Prices, PriceSize * PriceCount).ToUShorts();
 			for (int i = 0; i < prices.Length; i++)
 			{
 				var newPrice = Scale(prices[i] / multiplier, scale, 1, rng, increaseOnly);
@@ -66,14 +64,14 @@ namespace FF1Lib
 			{
                 prices[i] = questItemPrice;
 			}
-			Put(PriceOffset, Blob.FromUShorts(prices));
+			Put(Offsets.data_Prices, Blob.FromUShorts(prices));
 
-			for (int i = GoldItemOffset; i < GoldItemOffset + GoldItemCount; i++)
+			for (int i = FirstGoldItemIndex; i < FirstGoldItemIndex + GoldItemCount; i++)
 			{
 				text[i] = FF1Text.TextToBytes(prices[i].ToString() + " G");
 			}
 
-			var pointers = Get(ShopPointerOffset, ShopPointerCount * ShopPointerSize).ToUShorts();
+			var pointers = Get(Offsets.lut_ShopData, ShopPointerCount * ShopPointerSize).ToUShorts();
 			RepackShops(pointers);
 
 			for (int i = (int)ShopType.Clinic; i < (int)ShopType.Inn + ShopSectionSize; i++)
@@ -90,11 +88,11 @@ namespace FF1Lib
 			}
 			if (flags.StartingGold)
 			{
-				var startingGold = BitConverter.ToUInt16(Get(StartingGoldOffset, 2), 0);
+				var startingGold = BitConverter.ToUInt16(Get(Offsets.startingGold, 2), 0);
 
 				startingGold = (ushort)Min(Scale(startingGold / multiplier, scale, 1, rng, increaseOnly), 0xFFFF);
 
-				Put(StartingGoldOffset, BitConverter.GetBytes(startingGold));
+				Put(Offsets.startingGold, BitConverter.GetBytes(startingGold));
 			}
 			
 		}
@@ -111,7 +109,7 @@ namespace FF1Lib
 
 		public void ScaleSingleEnemyStats(int index, double scale, bool wrapOverflow, bool includeMorale, MT19337 rng, bool increaseOnly)
 		{
-			var enemy = Get(EnemyOffset + index * EnemySize, EnemySize);
+			var enemy = Get(Offsets.data_EnemyStats + index * EnemySize, EnemySize);
 
 			var hp = BitConverter.ToUInt16(enemy, 4);
 			hp = (ushort)Min(Scale(hp, scale, 1.0, rng, increaseOnly), 0x7FFF);
@@ -142,7 +140,7 @@ namespace FF1Lib
 			enemy[12] = (byte)Min(newStrength, 0xFF); // strength
 			enemy[13] = (byte)Min(newCrit, 0xFF); // critical%
 
-			Put(EnemyOffset + index * EnemySize, enemy);
+			Put(Offsets.data_EnemyStats + index * EnemySize, enemy);
 		}
 
 		private int Scale(double value, double scale, double adjustment, MT19337 rng, bool increaseOnly)
@@ -199,33 +197,36 @@ namespace FF1Lib
 
 		private void ScaleEncounterRate(double overworldMultiplier, double dungeonMultiplier)
 		{
+			int overworldThreatLevelOffset = Offsets.func_OWCanMove + 0x81;
+			int oceanThreatLevelOffset = Offsets.func_OWCanMove + 0x89;
+
 			if (overworldMultiplier == 0)
 			{
-				PutInBank(0x1F, 0xC50E, Blob.FromHex("EAEA"));
+				Put(Offsets.func_OWCanMove + 0x91, Blob.FromHex("EAEA"));
 			}
 			else
 			{
-				byte[] threats = new byte[] { Data[OverworldThreatLevelOffset], Data[OceanThreatLevelOffset] };
+				byte[] threats = new byte[] { Data[overworldThreatLevelOffset], Data[oceanThreatLevelOffset] };
 				threats = threats.Select(x => (byte)Math.Ceiling(x * overworldMultiplier)) .ToArray();
-				Data[OverworldThreatLevelOffset] = threats[0];
-				Data[OceanThreatLevelOffset] = threats[1];
+				Data[overworldThreatLevelOffset] = threats[0];
+				Data[oceanThreatLevelOffset] = threats[1];
 			}
 
 			if (dungeonMultiplier == 0)
 			{
-				PutInBank(0x1F, 0xCDCC, Blob.FromHex("1860"));
+				Put(Offsets.func_SMMove_Battle + 0x9, Blob.FromHex("1860"));
 			}
 			else
 			{
-				var threats = Get(ThreatLevelsOffset, ThreatLevelsSize).ToBytes();
+				var threats = Get(Offsets.lut_BattleRates, ThreatLevelsSize).ToBytes();
 				threats = threats.Select(x => (byte)Math.Ceiling(x * dungeonMultiplier)) .ToArray();
-				Put(ThreatLevelsOffset, threats);
+				Put(Offsets.lut_BattleRates, threats);
 			}
 		}
 
 		public void ExpGoldBoost(double bonus, double multiplier)
 		{
-			var enemyBlob = Get(EnemyOffset, EnemySize * EnemyCount);
+			var enemyBlob = Get(Offsets.data_EnemyStats, EnemySize * EnemyCount);
 			var enemies = enemyBlob.Chunk(EnemySize);
 
 			foreach (var enemy in enemies)
@@ -244,9 +245,9 @@ namespace FF1Lib
 
 			enemyBlob = Blob.Concat(enemies);
 
-			Put(EnemyOffset, enemyBlob);
+			Put(Offsets.data_EnemyStats, enemyBlob);
 
-			var levelRequirementsBlob = Get(LevelRequirementsOffset, LevelRequirementsSize * LevelRequirementsCount);
+			var levelRequirementsBlob = Get(Offsets.lut_ExpToAdvance, LevelRequirementsSize * LevelRequirementsCount);
 			var levelRequirementsBytes = levelRequirementsBlob.Chunk(3).Select(threeBytes => new byte[] { threeBytes[0], threeBytes[1], threeBytes[2], 0 }).ToList();
 			for (int i = 0; i < LevelRequirementsCount; i++)
 			{
@@ -254,7 +255,7 @@ namespace FF1Lib
 				levelRequirementsBytes[i] = BitConverter.GetBytes(levelRequirement);
 			}
 
-			Put(LevelRequirementsOffset, Blob.Concat(levelRequirementsBytes.Select(bytes => (Blob)new byte[] { bytes[0], bytes[1], bytes[2] })));
+			Put(Offsets.lut_ExpToAdvance, Blob.Concat(levelRequirementsBytes.Select(bytes => (Blob)new byte[] { bytes[0], bytes[1], bytes[2] })));
 
 			// A dirty, ugly, evil piece of code that sets the level requirement for level 2, even though that's already defined in the above table.
 			byte firstLevelRequirement = Data[0x7C04B];

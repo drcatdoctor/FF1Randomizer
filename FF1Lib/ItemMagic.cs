@@ -10,12 +10,10 @@ namespace FF1Lib
 {
 	public partial class FF1Rom : NesRom
 	{
-		public const int GearTextOffset = 0x2B9BD;
 		public const int GearTextSize = 8;
-		private const int MagicBitOffset = 0x3;
-		private const int SpellNamesOffset = 0x2BE03;
 		private const int SpellNamesSize = 5;
 		private const int SpellNamesCount = 64;
+		public const int MagicBitOffset = 0x3;
 
 		private int WeaponStart = (byte)ItemLists.AllWeapons.ElementAt(0);
 		private int ArmorStart = (byte)ItemLists.AllArmor.ElementAt(0);
@@ -27,8 +25,8 @@ namespace FF1Lib
 		{
 			CastableItemTargeting(); // make items able to target a single enemy or party member
 
-			List<Blob> spellNames = Get(SpellNamesOffset, SpellNamesSize * SpellNamesCount).Chunk(SpellNamesSize);
-			var Spells = spellNames.Select((blob, i) => new MagicSpell // creat a list of all spells 
+			List<Blob> spellNames = Get(Offsets.itemText_strings_MagicStart, SpellNamesSize * SpellNamesCount).Chunk(SpellNamesSize);
+			var Spells = spellNames.Select((blob, i) => new MagicSpell // creat a list of all spells
 			{
 				Data = null,
 				Index = (byte)i,
@@ -46,11 +44,14 @@ namespace FF1Lib
 		private void WriteItemSpellData(MagicSpell Spell, Item item)
 		{
 			// Set the spell an item casts
-			var offset = WeaponOffset + 0x8 * Math.Min((byte)item - WeaponStart, ArmorStart - WeaponStart) + 0x4 * Math.Max(0, (byte)item - ArmorStart) + MagicBitOffset;
+			var offset = Offsets.lut_WeaponData +
+			             0x8 * Math.Min((byte)item - WeaponStart, ArmorStart - WeaponStart) +
+			             0x4 * Math.Max(0, (byte)item - ArmorStart) +
+			             MagicBitOffset;
 			Data[offset] = (byte)(Spell.Index + 1);
 
 			// Setup the text of the item's name to include the spell name.
-			offset = GearTextOffset + ((byte)item > (byte)Item.Ribbon ? 1 : 0) + GearTextSize * ((byte)item - WeaponStart);
+			offset = Offsets.itemText_strings_GearStart + ((byte)item > (byte)Item.Ribbon ? 1 : 0) + GearTextSize * ((byte)item - WeaponStart);
 			if (Get(offset, 1)[0] > 200)
 			{
 				offset++; // If the first byte is in the icon range, bump the pointer to overwrite after it.

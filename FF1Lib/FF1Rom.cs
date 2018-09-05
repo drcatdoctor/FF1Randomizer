@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,17 +15,11 @@ namespace FF1Lib
 	{
 		public const string Version = "2.4.0";
 
-		public const int RngOffset = 0x7F100;
-		public const int BattleRngOffset = 0x7FCF1;
 		public const int RngSize = 256;
 
-		public const int LevelRequirementsOffset = 0x2D000;
 		public const int LevelRequirementsSize = 3;
 		public const int LevelRequirementsCount = 49;
 
-		public const int StartingGoldOffset = 0x0301C;
-
-		public const int GoldItemOffset = 108; // 108 items before gold chests
 		public const int GoldItemCount = 68;
 		public static readonly List<int> UnusedGoldItems = new List<int> { 110, 111, 112, 113, 114, 116, 120, 121, 122, 124, 125, 127, 132, 158, 165, 166, 167, 168, 170, 171, 172 };
 
@@ -367,7 +361,7 @@ namespace FF1Lib
 				FunEnemyNames(flags.TeamSteak);
 			}
 
-			var itemText = ReadText(ItemTextPointerOffset, ItemTextPointerBase, ItemTextPointerCount);
+			var itemText = ReadText(Offsets.itemText_ptrTable, ItemTextPointerBase, ItemTextPointerCount);
 			// var dialogueText = ReadText(DialogueTextPointerOffset, DialogueTextPointerBase, DialogueTextPointerCount);
 			FixVanillaRibbon(itemText);
 			ExpGoldBoost(flags.ExpBonus, flags.ExpMultiplier);
@@ -383,7 +377,7 @@ namespace FF1Lib
 			overworldMap.ApplyMapEdits();
 			WriteMaps(maps);
 
-			WriteText(itemText, ItemTextPointerOffset, ItemTextPointerBase, ItemTextOffset, UnusedGoldItems);
+			WriteText(itemText, Offsets.itemText_ptrTable, ItemTextPointerBase, Offsets.itemText_strings, UnusedGoldItems);
 			// WriteText(dialogueText, DialogueTextPointerOffset, DialogueTextPointerBase, DialogueTextOffset);
 
 			if (flags.EnemyScaleFactor > 1)
@@ -767,15 +761,15 @@ namespace FF1Lib
 
 		public void ShuffleRng(MT19337 rng)
 		{
-			var rngTable = Get(RngOffset, RngSize).Chunk(1).ToList();
+			var rngTable = Get(Offsets.RngOffset, RngSize).Chunk(1).ToList();
 			rngTable.Shuffle(rng);
 
-			Put(RngOffset, rngTable.SelectMany(blob => blob.ToBytes()).ToArray());
+			Put(Offsets.RngOffset, rngTable.SelectMany(blob => blob.ToBytes()).ToArray());
 
-			var battleRng = Get(BattleRngOffset, RngSize).Chunk(1).ToList();
+			var battleRng = Get(Offsets.BattleRngOffset, RngSize).Chunk(1).ToList();
 			battleRng.Shuffle(rng);
 
-			Put(BattleRngOffset, battleRng.SelectMany(blob => blob.ToBytes()).ToArray());
+			Put(Offsets.BattleRngOffset, battleRng.SelectMany(blob => blob.ToBytes()).ToArray());
 		}
 
 	}

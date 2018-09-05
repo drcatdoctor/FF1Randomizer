@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,15 +9,12 @@ namespace FF1Lib
 {
 	public partial class FF1Rom : NesRom
 	{
-		public const int EnemyOffset = 0x30520;
 		public const int EnemySize = 20;
 		public const int EnemyCount = 128;
 
-		public const int ScriptOffset = 0x31020;
 		public const int ScriptSize = 16;
 		public const int ScriptCount = 44;
 
-		public const int FormationFrequencyOffset = 0x2C000;
 		public const int FormationFrequencySize = 8;
 		public const int FormationFrequencyCount = 128;
 
@@ -41,8 +38,8 @@ namespace FF1Lib
 		public void ShuffleEnemyFormations(MT19337 rng)
 		{
 			// intra-zone shuffle, does not change which formations are in zomes.
-			var oldFormations = Get(FormationFrequencyOffset, FormationFrequencySize * FormationFrequencyCount).Chunk(FormationFrequencySize);
-			var newFormations = Get(FormationFrequencyOffset, FormationFrequencySize * FormationFrequencyCount).Chunk(FormationFrequencySize);
+			var oldFormations = Get(Offsets.lut_BattleRates, FormationFrequencySize * FormationFrequencyCount).Chunk(FormationFrequencySize);
+			var newFormations = Get(Offsets.lut_BattleRates, FormationFrequencySize * FormationFrequencyCount).Chunk(FormationFrequencySize);
 			Blob WarMech = new byte[]{ 0x56 };
 
 			for (int i = 0; i < FormationFrequencyCount; i++)
@@ -68,12 +65,12 @@ namespace FF1Lib
 				
 			}
 
-			Put(FormationFrequencyOffset, newFormations.SelectMany(formation => formation.ToBytes()).ToArray());
+			Put(Offsets.lut_BattleRates, newFormations.SelectMany(formation => formation.ToBytes()).ToArray());
 		}
 		public void ShuffleEnemyScripts(MT19337 rng, bool AllowUnsafePirates)
 		{
-			var oldEnemies = Get(EnemyOffset, EnemySize * EnemyCount).Chunk(EnemySize);
-			var newEnemies = Get(EnemyOffset, EnemySize * EnemyCount).Chunk(EnemySize);
+			var oldEnemies = Get(Offsets.data_EnemyStats, EnemySize * EnemyCount).Chunk(EnemySize);
+			var newEnemies = Get(Offsets.data_EnemyStats, EnemySize * EnemyCount).Chunk(EnemySize);
 
 			var normalOldEnemies = oldEnemies.Take(EnemyCount - 10).ToList(); // all but WarMECH, fiends, fiends revisited, and CHAOS
 			normalOldEnemies.Shuffle(rng);
@@ -124,12 +121,12 @@ namespace FF1Lib
 				}
 			}
 
-			Put(EnemyOffset, newEnemies.SelectMany(enemy => enemy.ToBytes()).ToArray());
+			Put(Offsets.data_EnemyStats, newEnemies.SelectMany(enemy => enemy.ToBytes()).ToArray());
 		}
 
 		public void ShuffleEnemySkillsSpells(MT19337 rng)
 		{
-			var scriptBytes = Get(ScriptOffset, ScriptSize * ScriptCount).Chunk(ScriptSize);
+			var scriptBytes = Get(Offsets.lut_EnemyAi, ScriptSize * ScriptCount).Chunk(ScriptSize);
 
 			// Remove two instances each of CRACK and TOXIC since they're likely to get spread out to several enemies.
 			const int SandW = 7; // CRACK
@@ -147,7 +144,7 @@ namespace FF1Lib
 			ShuffleIndexedSkillsSpells(scriptBytes, bossIndices, rng);
 			ShuffleIndexedSkillsSpells(scriptBytes, bigBossIndices, rng);
 
-			Put(ScriptOffset, scriptBytes.SelectMany(script => script.ToBytes()).ToArray());
+			Put(Offsets.lut_EnemyAi, scriptBytes.SelectMany(script => script.ToBytes()).ToArray());
 		}
 
 		private void ShuffleIndexedSkillsSpells(List<Blob> scriptBytes, List<int> indices, MT19337 rng)
@@ -224,8 +221,8 @@ namespace FF1Lib
 
 		public void ShuffleEnemyStatusAttacks(MT19337 rng, bool AllowUnsafePirates)
 		{
-			var oldEnemies = Get(EnemyOffset, EnemySize * EnemyCount).Chunk(EnemySize);
-			var newEnemies = Get(EnemyOffset, EnemySize * EnemyCount).Chunk(EnemySize);
+			var oldEnemies = Get(Offsets.data_EnemyStats, EnemySize * EnemyCount).Chunk(EnemySize);
+			var newEnemies = Get(Offsets.data_EnemyStats, EnemySize * EnemyCount).Chunk(EnemySize);
 
 			oldEnemies.Shuffle(rng);
 
@@ -242,7 +239,7 @@ namespace FF1Lib
 				newEnemies[i][15] = oldEnemies[i][15];
 			}
 
-			Put(EnemyOffset, newEnemies.SelectMany(enemy => enemy.ToBytes()).ToArray());
+			Put(Offsets.data_EnemyStats, newEnemies.SelectMany(enemy => enemy.ToBytes()).ToArray());
 		}
 	}
 }

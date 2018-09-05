@@ -8,21 +8,15 @@ namespace FF1Lib
 {
     public partial class FF1Rom
     {
-	    public const int ItemTextPointerOffset = 0x2B700;
 	    public const int ItemTextPointerCount = 252;
 	    public const int ItemTextPointerBase = 0x20000;
-	    public const int ItemTextOffset = 0x2B900;
 
-	    public const int EnemyTextPointerOffset = 0x2D4E0;
 	    public const int EnemyTextPointerBase = 0x24000;
-	    public const int EnemyTextOffset = 0x2D5E0;
 
-	    public const int DialogueTextPointerOffset = 0x28000;
 	    public const int DialogueTextPointerCount = 256;
 	    public const int DialogueTextPointerBase = 0x20000;
-	    public const int DialogueTextOffset = 0x28200;
 
-		public Blob[] ReadText(int pointerOffset, int pointerBase, int count)
+	    public Blob[] ReadText(int pointerOffset, int pointerBase, int count)
 	    {
 		    var pointers = Get(pointerOffset, 2 * count).ToUShorts().ToList();
 

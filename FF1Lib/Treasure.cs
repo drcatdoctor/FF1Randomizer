@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,13 +10,11 @@ namespace FF1Lib
 	{
 		private const Item ReplacementItem = Item.Cabin;
 
-		public const int TreasureOffset = 0x03100;
 		public const int TreasureSize = 1;
 		public const int TreasurePoolCount = 256;
 		public const int TreasureCount = 256;
+		public const string giveRewardRoutineAddress = "93DD"; //0xDD93
 
-		public const int lut_MapObjTalkJumpTblAddress = 0x390D3;
-		public const string giveRewardRoutineAddress = "93DD";
 		public static readonly List<int> UnusedTreasureIndices =
 			Enumerable.Range(0, 1).Concat(
 			Enumerable.Range(145, 4)).Concat(
@@ -47,7 +45,7 @@ namespace FF1Lib
 				}
 			}
 
-			var treasureBlob = Get(TreasureOffset, TreasureSize * TreasureCount);
+			var treasureBlob = Get(Offsets.treasure, TreasureSize * TreasureCount);
 			var treasurePool = UsedTreasureIndices.Select(x => (Item)treasureBlob[x])
 							.Concat(ItemLists.AllNonTreasureChestItems).ToList();
 

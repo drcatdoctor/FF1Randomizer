@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RomUtilities;
@@ -8,13 +8,9 @@ namespace FF1Lib
 	public partial class FF1Rom : NesRom
 	{
 		public const int Nop = 0xEA;
-		public const int SardaOffset = 0x393E9;
 		public const int SardaSize = 7;
-		public const int CanoeSageOffset = 0x39482;
 		public const int CanoeSageSize = 5;
-		public const int PartyShuffleOffset = 0x312E0;
 		public const int PartyShuffleSize = 3;
-		public const int MapSpriteOffset = 0x03400;
 		public const int MapSpriteSize = 3;
 		public const int MapSpriteCount = 16;
 
@@ -98,7 +94,7 @@ namespace FF1Lib
 				nops[i] = Nop;
 			}
 
-			Put(SardaOffset, nops);
+			Put(Offsets.NPC.func_Talk_Sarda + 0x5, nops);
 		}
 
 		public void EnableEarlySage()
@@ -109,7 +105,7 @@ namespace FF1Lib
 				nops[i] = Nop;
 			}
 
-			Put(CanoeSageOffset, nops);
+			Put(Offsets.NPC.func_Talk_CanoeSage + 0x5, nops);
 		}
 
 		public void PartyRoulette()
@@ -273,13 +269,15 @@ namespace FF1Lib
 			{
 				nops[i] = Nop;
 			}
-			Put(PartyShuffleOffset, nops);
+			Put(Offsets.func_ExitBattle, nops);
 
 			nops = new byte[2];
 			for (int i = 0; i < nops.Length; i++)
 			{
 				nops[i] = Nop;
 			}
+
+			// somewhere inside LineupMenu_ProcessJoy in 0E:99FD
 			Put(0x39A6B, nops);
 			Put(0x39A74, nops);
 		}
@@ -382,7 +380,7 @@ namespace FF1Lib
 		private void EnableEasyMode()
 		{
 			ScaleEncounterRate(0.20, 0.20);
-			var enemies = Get(EnemyOffset, EnemySize * EnemyCount).Chunk(EnemySize);
+			var enemies = Get(Offsets.data_EnemyStats, EnemySize * EnemyCount).Chunk(EnemySize);
 			foreach (var enemy in enemies)
 			{
 				var hp = BitConverter.ToUInt16(enemy, 4);
@@ -391,7 +389,7 @@ namespace FF1Lib
 				Array.Copy(hpBytes, 0, enemy, 4, 2);
 			}
 
-			Put(EnemyOffset, enemies.SelectMany(enemy => enemy.ToBytes()).ToArray());
+			Put(Offsets.data_EnemyStats, enemies.SelectMany(enemy => enemy.ToBytes()).ToArray());
 		}
 
 		public void EasterEggs()

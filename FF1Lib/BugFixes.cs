@@ -26,12 +26,12 @@ namespace FF1Lib
 			Put(0x32DDD, new byte[] { 0xEA });
 
 			// Increase crit rate of all weapons
-			var weapons = Get(WeaponOffset, WeaponSize * WeaponCount).Chunk(WeaponSize);
+			var weapons = Get(Offsets.lut_WeaponData, WeaponSize * WeaponCount).Chunk(WeaponSize);
 			foreach (var weapon in weapons)
 			{
 				weapon[2] *= 2;
 			}
-			Put(WeaponOffset, weapons.SelectMany(weapon => weapon.ToBytes()).ToArray());
+			Put(Offsets.lut_WeaponData, weapons.SelectMany(weapon => weapon.ToBytes()).ToArray());
 
 			// Change damage bonus from +4 to +10
 			Put(0x326F5, Blob.FromHex("0A"));

@@ -243,7 +243,7 @@ namespace FF1Lib
 			Blob storyText = PackageTextBlob(pages, 0xA800);
 			System.Diagnostics.Debug.Assert(storyText.Length <= 0x0500, "Story text too large!");
 
-			Put(0x36800, storyText);
+			Put(Offsets.lut_StoryText, storyText);
 			Data[0x36E00] = (byte)(BridgeStory.Count);
 			Data[0x36E01] = (byte)(pages.Count - 1);
 		}

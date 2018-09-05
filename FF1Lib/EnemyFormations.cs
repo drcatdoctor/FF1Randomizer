@@ -14,7 +14,6 @@ namespace FF1Lib
 			TimeLoop,
 		};
 
-		private const int FormationsOffset = 0x2C400;
 		private const int FormationSize = 16;
 
 		private const int FormationCount = 128;           // Total formations
@@ -39,7 +38,7 @@ namespace FF1Lib
 		public void ShuffleUnrunnable(MT19337 rng)
 		{
 			// First indiscriminately mark all normal formations as runnable.
-			List<Blob> formations = Get(FormationsOffset, FormationSize * NormalFormationCount).Chunk(FormationSize);
+			List<Blob> formations = Get(Offsets.lut_BattleFormations, FormationSize * NormalFormationCount).Chunk(FormationSize);
 			formations.ForEach(formation => formation[UnrunnableOffset] &= 0xFE);
 
 			// Generate a shuffled list of ids in the normal formation range and update formations with that.
@@ -49,32 +48,32 @@ namespace FF1Lib
 			ids = ids.Take(VanillaUnrunnableCount).ToList();
 			ids.ForEach(id => formations[id][UnrunnableOffset] |= 0x01);
 
-			Put(FormationsOffset, formations.SelectMany(formation => formation.ToBytes()).ToArray());
+			Put(Offsets.lut_BattleFormations, formations.SelectMany(formation => formation.ToBytes()).ToArray());
 		}
 
 		public void ShuffleSurpriseBonus(MT19337 rng)
 		{
 			// Just like the vanilla game this doesn't care if a high surprise enemy is unrunnable
 			// and therefore incapable of surprise or first strike. It just shuffles indiscriminately.
-			List<Blob> formations = Get(FormationsOffset, FormationSize * NormalFormationCount).Chunk(FormationSize);
+			List<Blob> formations = Get(Offsets.lut_BattleFormations, FormationSize * NormalFormationCount).Chunk(FormationSize);
 			List<byte> chances = formations.Select(formation => formation[SurpriseOffset]).ToList();
 			chances.Shuffle(rng);
 
 			formations = formations.Zip(chances, (formation, chance) => { formation[SurpriseOffset] = chance; return formation; }).ToList();
-			Put(FormationsOffset, formations.SelectMany(formation => formation.ToBytes()).ToArray());
+			Put(Offsets.lut_BattleFormations, formations.SelectMany(formation => formation.ToBytes()).ToArray());
 		}
 
 		public void MakeWarMECHUnrunnable()
 		{
 			// This needs to be called after ShuffleUnrunnable, otherwise it will shuffle away this unrunnability.
-			Blob warMECHFormation = Get(FormationsOffset + FormationSize * WarMECHFormationIndex, FormationSize);
+			Blob warMECHFormation = Get(Offsets.lut_BattleFormations + FormationSize * WarMECHFormationIndex, FormationSize);
 			warMECHFormation[UnrunnableOffset] |= 0x01;
-			Put(FormationsOffset + FormationSize * WarMECHFormationIndex, warMECHFormation);
+			Put(Offsets.lut_BattleFormations + FormationSize * WarMECHFormationIndex, warMECHFormation);
 		}
 
 		public void TransformFinalFormation(FinalFormation formation)
 		{
-			Blob finalBattle = Get(FormationsOffset + ChaosFormationIndex * FormationSize, FormationSize);
+			Blob finalBattle = Get(Offsets.lut_BattleFormations + ChaosFormationIndex * FormationSize, FormationSize);
 
 			switch (formation)
 			{
@@ -126,7 +125,7 @@ namespace FF1Lib
 					break;
 			}
 
-			Put(FormationsOffset + ChaosFormationIndex * FormationSize, finalBattle);
+			Put(Offsets.lut_BattleFormations + ChaosFormationIndex * FormationSize, finalBattle);
 		}
 	}
 
