@@ -9,12 +9,27 @@ namespace FF1Lib
     public partial class FF1Rom
     {
 	    public const int ItemTextPointerCount = 252;
-	    public const int ItemTextPointerBase = 0x20000;
+	    public const int ItemTextBank = 0x0A;
 
-	    public const int EnemyTextPointerBase = 0x24000;
+	    public const int EnemyTextBank = 0x0B;
 
 	    public const int DialogueTextPointerCount = 256;
-	    public const int DialogueTextPointerBase = 0x20000;
+	    public const int DialogueTextBank = 0x0A;
+
+	    public Blob[] ReadTextFromBank(int bank, int pointerOffset,  int count)
+	    {
+		    return ReadText(pointerOffset, Offsets.BA(bank, 0x0), count);
+	    }
+
+	    public void WriteTextToBank(Blob[] textBlobs, int bank, int pointerOffset, int textOffset)
+	    {
+			WriteText(textBlobs, pointerOffset, Offsets.BA(bank, 0x0), textOffset, new List<int>());
+	    }
+
+	    public void WriteTextToBank(Blob[] textBlobs, int bank, int pointerOffset, int textOffset, List<int> skipThese)
+	    {
+		    WriteText(textBlobs, pointerOffset, Offsets.BA(bank, 0x0), textOffset, skipThese);
+	    }
 
 	    public Blob[] ReadText(int pointerOffset, int pointerBase, int count)
 	    {

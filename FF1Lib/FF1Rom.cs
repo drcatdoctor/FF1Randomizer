@@ -43,8 +43,13 @@ namespace FF1Lib
 				int offset = (bank * 0x4000) + (address - 0x8000);
 				this.Put(offset, data);
 			}
-
 		}
+
+		public Blob GetFromBank(int bank, int address, int length)
+		{
+			return Get(Offsets.BA(bank, address), length);
+		}
+
 		private Blob CreateLongJumpTableEntry(byte bank, ushort addr)
 		{
 			List<byte> tmp = new List<byte> { 0x20, 0xC8, 0xD7 }; // JSR $D7C8, beginning of each table entry
@@ -361,8 +366,8 @@ namespace FF1Lib
 				FunEnemyNames(flags.TeamSteak);
 			}
 
-			var itemText = ReadText(Offsets.itemText_ptrTable, ItemTextPointerBase, ItemTextPointerCount);
-			// var dialogueText = ReadText(DialogueTextPointerOffset, DialogueTextPointerBase, DialogueTextPointerCount);
+			var itemText = ReadTextFromBank(ItemTextBank, Offsets.itemText_ptrTable, ItemTextPointerCount);
+			// var dialogueText = ReadTextFromBank(DialogueTextBank, DialogueTextPointerOffset, DialogueTextPointerCount);
 			FixVanillaRibbon(itemText);
 			ExpGoldBoost(flags.ExpBonus, flags.ExpMultiplier);
 			ScalePrices(flags, itemText, rng, false, shopItemLocation);
@@ -377,8 +382,8 @@ namespace FF1Lib
 			overworldMap.ApplyMapEdits();
 			WriteMaps(maps);
 
-			WriteText(itemText, Offsets.itemText_ptrTable, ItemTextPointerBase, Offsets.itemText_strings, UnusedGoldItems);
-			// WriteText(dialogueText, DialogueTextPointerOffset, DialogueTextPointerBase, DialogueTextOffset);
+			WriteTextToBank(itemText, ItemTextBank, Offsets.itemText_ptrTable, Offsets.itemText_strings, UnusedGoldItems);
+			// WriteTextToBank(dialogueText, DialogueTextBank, DialogueTextPointerOffset, DialogueTextOffset);
 
 			if (flags.EnemyScaleFactor > 1)
 			{

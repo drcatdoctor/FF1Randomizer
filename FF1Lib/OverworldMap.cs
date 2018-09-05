@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -979,14 +979,13 @@ namespace FF1Lib
 
 		public void PutCompressedMapRows(List<List<byte>> compressedRows)
 		{
-			var pointerBase = 0x4000;
-			var outputBase = 0x4200;
 			var outputOffset = 0;
 			for (int i = 0; i < compressedRows.Count; i++)
 			{
 				var outputRow = compressedRows[i];
-				_rom.Put(pointerBase + i * 2, Blob.FromUShorts(new ushort[] { (ushort)(outputBase + pointerBase + outputOffset) }));
-				_rom.Put(outputBase + outputOffset, outputRow.ToArray());
+				_rom.Put(FF1Rom.Offsets.owmap_ptrTable + i * 2,
+					Blob.FromUShorts(new ushort[] { (ushort)(FF1Rom.Offsets.owmap_data + FF1Rom.Offsets.owmap_ptrTable + outputOffset) }));
+				_rom.Put(FF1Rom.Offsets.owmap_data + outputOffset, outputRow.ToArray());
 				outputOffset += outputRow.Count;
 			}
 

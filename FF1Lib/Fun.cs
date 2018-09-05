@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,7 +21,7 @@ namespace FF1Lib
 
 	    public void FunEnemyNames(bool teamSteak)
 	    {
-		    var enemyText = ReadText(Offsets.data_EnemyNames_ptrTable, EnemyTextPointerBase, EnemyCount);
+		    var enemyText = ReadTextFromBank(EnemyTextBank, Offsets.data_EnemyNames_ptrTable, EnemyCount);
 
 		    enemyText[1] = FF1Text.TextToBytes("GrUMP", useDTE: false);
 		    enemyText[2] = FF1Text.TextToBytes("RURURU", useDTE: false); // +2
@@ -46,8 +46,8 @@ namespace FF1Lib
 			// Moving IMP and GrIMP gives me another 10 bytes, for a total of 19 extra bytes, of which I'm using 16.
 			var enemyTextPart1 = enemyText.Take(2).ToArray();
 		    var enemyTextPart2 = enemyText.Skip(2).ToArray();
-		    WriteText(enemyTextPart1, Offsets.data_EnemyNames_ptrTable, EnemyTextPointerBase, 0x2CFEC);
-		    WriteText(enemyTextPart2, Offsets.data_EnemyNames_ptrTable + 4, EnemyTextPointerBase, Offsets.data_EnemyNames_strings);
+		    WriteTextToBank(enemyTextPart1, EnemyTextBank, Offsets.data_EnemyNames_ptrTable, 0x2CFEC);
+		    WriteTextToBank(enemyTextPart2, EnemyTextBank, Offsets.data_EnemyNames_ptrTable + 4, Offsets.data_EnemyNames_strings);
 	    }
 
 	    public void PaletteSwap(MT19337 rng)
@@ -223,7 +223,7 @@ namespace FF1Lib
 					{
 						Data[address] = 0x41;
 					}
-					
+
 					break;
 			}
 		}

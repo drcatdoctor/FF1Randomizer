@@ -3,7 +3,7 @@ namespace FF1Lib
 {
 	public partial class FF1Rom
 	{
-		private static class Offsets
+		public static class Offsets
 		{
 			// NOTE all of the below (bank math) assumes MMC3 layout. Use at own risk before UpgradeToMMC3()!
 
@@ -28,13 +28,17 @@ namespace FF1Lib
 				return offset / 0x4000;
 			}
 
-			// -- bank 00: map --
+			// -- bank 00: map tile data --
 			public static readonly int mapTileData = BA(0x00, 0x8800);  // 0x00800
 			public static readonly int teleportTable = BA(0x00, 0xAD00);  // 0x02D00
 			public static readonly int mapSpriteAssignment = BA(0x00, 0xAE00);  // 0x02E00
 			public static readonly int startingGold = BA(0x00, 0xB01C);  // 0x0301C
 			public static readonly int treasure = BA(0x00, 0xB100);  // 0x03100
 			public static readonly int mapSprites = BA(0x00, 0xB400);  // 0x03400
+
+			// -- bank 01: overworld map --
+			public static readonly int owmap_ptrTable = BA(0x01, 0x8000);
+			public static readonly int owmap_data = BA(0x01, 0x8200);
 
 			// -- bank 04: location maps --
 			public static readonly int maps_ptrTable = BA(0x04, 0x8000);  // 0x10000
@@ -73,7 +77,7 @@ namespace FF1Lib
 
 			// -- bank 0E: shops, NPC interactions, menus --
 			// note: party gen was here, moved to 1E below.
-			public static readonly int lut_ShopData = BA(0x0E, 0x8302);  // 0x38302
+			public static readonly int lut_ShopData_ptrTable = BA(0x0E, 0x8302);  // 0x38302
 			public static readonly int lut_MapObjTalkJumpTbl = BA(0x0E, 0x90D3);  // 0x390D3
 			public static class NPC
 			{

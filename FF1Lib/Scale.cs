@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -71,19 +71,19 @@ namespace FF1Lib
 				text[i] = FF1Text.TextToBytes(prices[i].ToString() + " G");
 			}
 
-			var pointers = Get(Offsets.lut_ShopData, ShopPointerCount * ShopPointerSize).ToUShorts();
+			var pointers = Get(Offsets.lut_ShopData_ptrTable, ShopPointerCount * ShopPointerSize).ToUShorts();
 			RepackShops(pointers);
 
 			for (int i = (int)ShopType.Clinic; i < (int)ShopType.Inn + ShopSectionSize; i++)
 			{
 				if (pointers[i] != ShopNullPointer)
 				{
-					var priceBytes = Get(ShopPointerBase + pointers[i], 2);
+					var priceBytes = GetFromBank(ShopDataBank, pointers[i], 2);
 					var priceValue = BitConverter.ToUInt16(priceBytes, 0);
 
 					priceValue = (ushort)Scale(priceValue / multiplier, scale, 1, rng, increaseOnly);
 					priceBytes = BitConverter.GetBytes(priceValue);
-					Put(ShopPointerBase + pointers[i], priceBytes);
+					PutInBank(ShopDataBank, pointers[i], priceBytes);
 				}
 			}
 			if (flags.StartingGold)
@@ -94,7 +94,7 @@ namespace FF1Lib
 
 				Put(Offsets.startingGold, BitConverter.GetBytes(startingGold));
 			}
-			
+
 		}
 
 		public void ScaleEnemyStats(double scale, bool wrapOverflow, bool includeMorale, MT19337 rng, bool increaseOnly)

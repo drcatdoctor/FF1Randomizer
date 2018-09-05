@@ -9,7 +9,7 @@ namespace FF1Lib
 {
 	public partial class FF1Rom : NesRom
 	{
-		public const int ShopPointerBase = 0x30000;
+		public const ushort ShopDataBank = 0x0E;
 		public const int ShopPointerSize = 2;
 		public const int ShopPointerCount = 70;
 		public const int ShopSectionSize = 10;
@@ -33,7 +33,7 @@ namespace FF1Lib
 
 		public ItemShopSlot ShuffleShops(MT19337 rng, bool earlyAilments, bool randomizeWeaponsAndArmor, IEnumerable<Item> excludeItemsFromRandomShops)
 		{
-			var pointers = Get(Offsets.lut_ShopData, ShopPointerCount * ShopPointerSize).ToUShorts();
+			var pointers = Get(Offsets.lut_ShopData_ptrTable, ShopPointerCount * ShopPointerSize).ToUShorts();
 
 			RepackShops(pointers);
 
@@ -47,20 +47,20 @@ namespace FF1Lib
             if (result == null)
                 throw new InvalidOperationException("Shop Location for Bottle was not set");
 
-			Put(Offsets.lut_ShopData, Blob.FromUShorts(pointers));
+			Put(Offsets.lut_ShopData_ptrTable, Blob.FromUShorts(pointers));
             return result;
 		}
 
 		public void ShuffleMagicShops(MT19337 rng)
 		{
-			var pointers = Get(Offsets.lut_ShopData, ShopPointerCount * ShopPointerSize).ToUShorts();
+			var pointers = Get(Offsets.lut_ShopData_ptrTable, ShopPointerCount * ShopPointerSize).ToUShorts();
 
 			RepackShops(pointers);
 
 			ShuffleShopType(ShopType.White, pointers, rng);
 			ShuffleShopType(ShopType.Black, pointers, rng);
 
-			Put(Offsets.lut_ShopData, Blob.FromUShorts(pointers));
+			Put(Offsets.lut_ShopData_ptrTable, Blob.FromUShorts(pointers));
 		}
 
 		private bool AilmentsCovered(ushort[] pointers)
@@ -99,8 +99,8 @@ namespace FF1Lib
 				}
 			}
 
-			Put(Offsets.lut_ShopData, Blob.FromUShorts(pointers));
-			Put(ShopPointerBase + pointers[0], allEntries.ToArray());
+			Put(Offsets.lut_ShopData_ptrTable, Blob.FromUShorts(pointers));
+			PutInBank(ShopDataBank, pointers[0], allEntries.ToArray());
 		}
 
 		private ItemShopSlot ShuffleShopType(ShopType shopType, ushort[] pointers, MT19337 rng, bool randomize = false, IEnumerable<Item> excludeItemsFromRandomShops = null)
@@ -187,12 +187,12 @@ namespace FF1Lib
                     if (bottle != null)
                     {
                         var location = ShopMapLocationsByIndex[i];
-                        result = new ItemShopSlot(ShopPointerBase + pointer + bottle.index,
+                        result = new ItemShopSlot(Offsets.BA(ShopDataBank, pointer) + bottle.index,
                                                   $"{Enum.GetName(typeof(MapLocation), location)}Shop{bottle.index + 1}",
                                                   location,
                                                   Item.Bottle);
                     }
-					Put(ShopPointerBase + pointer, newShops[i].ToArray());
+					PutInBank(ShopDataBank, pointer, newShops[i].ToArray());
 
 					pointers[(int)shopType + i] = pointer;
 					pointer += (ushort)newShops[i].Count;
@@ -211,11 +211,11 @@ namespace FF1Lib
 				{
 					if (shopType == ShopType.Clinic || shopType == ShopType.Inn)
 					{
-						shops[i].AddRange(Get(ShopPointerBase + pointers[(int)shopType + i], 2).ToBytes());
+						shops[i].AddRange(GetFromBank(ShopDataBank, pointers[(int)shopType + i], 2).ToBytes());
 					}
 					else
 					{
-						var shopEntries = Get(ShopPointerBase + pointers[(int)shopType + i], 5);
+						var shopEntries = GetFromBank(ShopDataBank, pointers[(int)shopType + i], 5);
 						for (int j = 0; j < 5 && shopEntries[j] != 0; j++)
 						{
 							shops[i].Add(shopEntries[j]);
