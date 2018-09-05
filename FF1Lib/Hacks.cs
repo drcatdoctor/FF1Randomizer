@@ -512,11 +512,11 @@ namespace FF1Lib
 		{
 			// Set town desert tile to random encounters.
 			// If enabled, trap tile shuffle will change that second byte to 0x00 afterward.
-			Data[0x00864] = 0x0A;
-			Data[0x00865] = 0x80;
+			Data[Offsets.mapTileData + 0x64] = 0x0A;
+			Data[Offsets.mapTileData + 0x65] = 0x80;
 
 			// Give Melmond Desert backdrop
-			Data[0x0334D] = (byte)Backdrop.Desert;
+			Data[Offsets.backdropAssignment + 0x1D] = (byte)Backdrop.Desert;
 
 			Put(0x2C218, Blob.FromHex("0F0F8F2CACAC7E7C"));
 		}

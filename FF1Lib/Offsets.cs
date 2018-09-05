@@ -34,6 +34,7 @@ namespace FF1Lib
 			public static readonly int mapSpriteAssignment = BA(0x00, 0xAE00);  // 0x02E00
 			public static readonly int startingGold = BA(0x00, 0xB01C);  // 0x0301C
 			public static readonly int treasure = BA(0x00, 0xB100);  // 0x03100
+			public static readonly int backdropAssignment = BA(0x00, 0xB300); //0x03300
 			public static readonly int mapSprites = BA(0x00, 0xB400);  // 0x03400
 
 			// -- bank 01: overworld map --
@@ -54,9 +55,9 @@ namespace FF1Lib
 			public static readonly int itemText_strings_MagicStart = itemText_strings + 0x503; // 0x2BE03
 
 			// -- bank 0B: encounters, exp, enemy names --
-			public static readonly int lut_BattleFormations = BA(0x0B, 0x8400);
-			public static readonly int lut_BattleRates = BA(0x0B, 0x8C00);
-			public static readonly int lut_ExpToAdvance = BA(0x0B, 0x9000);
+			public static readonly int lut_BattleFormations = BA(0x0B, 0x8400);  // 0x2C400
+			public static readonly int lut_BattleRates = BA(0x0B, 0x8C00);   // 0x2CC00
+			public static readonly int lut_ExpToAdvance = BA(0x0B, 0x9000);  // 0x2D000
 			public static readonly int data_EnemyNames_ptrTable = BA(0x0B, 0x94E0); //0x2D4E0
 			public static readonly int data_EnemyNames_strings  = data_EnemyNames_ptrTable + 0x100; // 0x2D5E0
 

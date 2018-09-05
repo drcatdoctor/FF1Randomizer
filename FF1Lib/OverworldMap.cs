@@ -578,7 +578,7 @@ namespace FF1Lib
 
 		private void FixUnusedDefaultBackdrops()
 		{
-			Blob backdrops = _rom.Get(0x03300, 128);
+			Blob backdrops = _rom.Get(FF1Rom.Offsets.backdropAssignment, 128);
 			backdrops[0x2F] = (byte)Backdrop.EarthCave; // Dwarf Cave
 			backdrops[0x32] = (byte)Backdrop.SeaShrine; // Matoya's Cave
 			backdrops[0x3A] = (byte)Backdrop.MarshCave; // Sarda's Cave
@@ -589,7 +589,7 @@ namespace FF1Lib
 			backdrops[0x5A] = (byte)Backdrop.EarthCave; // Gaia
 			backdrops[0x6C] = (byte)Backdrop.Waterfall; // Bahamut's Room
 			backdrops[0x6D] = (byte)Backdrop.Tower; // Lefein
-			_rom.Put(0x03300, backdrops);
+			_rom.Put(FF1Rom.Offsets.backdropAssignment, backdrops);
 		}
 
 		public bool CheckEntranceSanity(IEnumerable<KeyValuePair<OverworldTeleportIndex, TeleportDestination>> shuffledEntrances,
